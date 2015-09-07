@@ -7,12 +7,25 @@
 	function appCtrl ($scope) {
 		var self = this;
 		self.display = '';
+		var buffer = false;
+		var buffer_last = false;
+		var flag = false;
+		var order = true;
+		var click_last = 'equal';
 		self.touch = touch;
 		self.memory = 0;
+		var op = {
+			add: function(cur,buf){return parseFloat(buf)+parseFloat(cur);},
+			sub: function(cur,buf){var tmp = order?parseFloat(buf)-parseFloat(cur):parseFloat(cur)-parseFloat(buf); order = false; return tmp;},
+			multi: function(cur,buf){return parseFloat(buf)*parseFloat(cur);},
+			divide: function(cur,buf){var tmp = order?parseFloat(buf)/parseFloat(cur):parseFloat(cur)/parseFloat(buf); order = false; return tmp;},
+		}
 		
 		self.ac = function(){
 			console.log('AC');
 			self.display = 0;
+			buffer = false;
+			buffer_last = false;
 		};
 		self.ce = function(){
 			console.log('ce');
@@ -20,7 +33,7 @@
 		};
 		self.dot = function(){
 			console.log('dot');
-			self.display += '.';
+			if(!/\./.test(self.display)) self.display += '.';
 		};
 		self.sign = function(){
 			console.log('sign');
@@ -28,6 +41,7 @@
 		};
 		self.undo = function(){
 			console.log('undo');
+			self.display+='';
 			self.display = self.display.slice(0,self.display.length-1);
 		};
 		self.mc = function(){
@@ -40,31 +54,15 @@
 		};
 		self.mmin = function(){
 			console.log('m-min');
-			self.memory -= parseInt(self.display);
+			self.memory -= parseFloat(self.display);
 		};
 		self.madd = function(){
 			console.log('m-add');
-			self.memory += parseInt(self.display);
-		};
-		self.add = function(){
-			console.log('add');
-			self.display = 0;
-		};
-		self.substr = function(){
-			console.log('substr');
-			self.display = 0;
-		};
-		self.multi = function(){
-			console.log('multi');
-			self.display = 0;
-		};
-		self.divide = function(){
-			console.log('divide');
-			self.display = 0;
+			self.memory += parseFloat(self.display);
 		};
 		self.sqr = function(){
 			console.log('sqr');
-			self.display = Math.sqrt(self.display);
+			self.display = Math.sqrt(parseFloat(self.display));
 		};
 		self.mu = function(){
 			console.log('mu');
@@ -74,17 +72,31 @@
 			console.log('percent');
 			self.display = 0;
 		};
+		self.ops = function(op){
+			self.equal();
+			buffer = [self.display,op];
+			buffer_last = false;
+			flag = true;
+			order = true;
+			click_last = op;
+		};
 		self.equal = function(){
-			console.log('equal');
-			self.display = 0;
+			//console.log('equal');
+			if(buffer) {
+				var tmp = op[buffer[1]](self.display,buffer_last||buffer[0]);
+				if(!buffer_last)buffer_last=self.display;
+				self.display = tmp;
+				flag=true;
+			};
 		};
 		
 		function touch($event) {
 			var val = angular.element($event.target).attr('val');
-			/\d/.test(val)?self.display = self.display*10+parseInt(val):self[val]();
-		};
-		function AC() {
-			console.log('test');
+			var ops = angular.element($event.target).attr('ops');
+			if(val)
+				/\d/.test(val)
+					?(self.display=(!flag?(self.display+'').replace(/^0+/, ''):'')+val,flag=false)
+					:ops?self.ops(val):self[val]();
 		};
 	};
   
